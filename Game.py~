@@ -1,0 +1,131 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import numpy as np
+import pygame
+import sys
+from pygame.locals import *
+
+
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+GREEN = (0, 255, 0)
+BLACK = (0, 0, 0)
+EPS = 1e-7
+
+def contrast(color, p, q):
+    r,g,b = color
+    return (r*q/p, g*q/p, b*q/p)
+    
+
+class Game:
+    def __init__(self):
+        self.WIDTH = 800
+        self.HEIGHT = 700
+        self.SQW = 40
+        self.SQH = 30
+        self.SQC = WHITE
+        self.clock = pygame.time.Clock()
+        pygame.init()
+        pygame.display.set_caption("CognitiveGame")
+        self.screen = pygame.display.set_mode((self.WIDTH,self.HEIGHT))
+        self.font = pygame.font.Font(None, 80)
+        self.clock = pygame.time.Clock()
+        self.state = "START"
+        self.BACKGROUND_COLOR = BLACK
+        self.rect = [pygame.Surface((slef.SQW, slef.SQH), masks=contrast(self.SQC, i, 16)) for i in range(16)]
+
+    def checkQUIT(self, events):
+        for event in events:
+            if event.type == QUIT:
+                return True
+        return False
+        
+    def start_run(self, events):
+        self.screen.fill(self.BACKGROUND_COLOR)
+        ren = self.font.render("Press Any Key!", 0, WHITE, BLACK)
+        self.screen.blit(ren, (10, 10))
+        pygame.display.flip()
+        for event in events:
+            if event.type == KEYUP:
+                return "PLAY"
+        return "START"
+
+    def play_wait(self, events):
+        self.screen.fill(self.BACKGROUND_COLOR)                     
+        ren = self.font.render("Press SpaceBar", 0, WHITE, BLACK)
+        self.screen.blit(ren, (10, 10))
+        pygame.display.flip()
+        for event in events:
+            if event.type == KEYDOWN and event.key == K_SPACE:
+                self.clock.tick()
+                return "PLAYDISPLAY"
+        return "PLAY"
+
+    def set_time():
+        self.timestamp = time.time()
+
+    def get_time():
+        return time.time() - self.timestamp
+        
+    def play_wait(self, events):
+        self.screen.fill(self.BACKGROUND_COLOR)                     
+        ren = self.font.render("Press SpaceBar", 0, WHITE, BLACK)
+        self.screen.blit(ren, (10, 10))
+        pygame.display.flip()
+        for event in events:
+            if event.type == KEYDOWN and event.key == K_SPACE:
+                self.set_time()
+                return "PLAYDISPLAY"
+        return "PLAYWAIT"
+
+    def play_display(self, events):
+        self.screen.fill(self.BACKGROUND_COLOR)
+        self.screen.blit(*self.next_rect())
+        pygame.display.flip()
+        if self.get_time > self.DISPLAYTIME:
+            return "PLAYASK"
+        return "PLAYDISPLAY"
+
+    def play_ask(self, events):
+        self.screen.fill(self.BACKGROUND_COLOR)                     
+        ren = self.font.render("L or R?", 0, WHITE, BLACK)
+        self.screen.blit(ren, (10, 10))
+        pygame.display.flip()
+        for event in events:
+            if event.type == KEYDOWN and event.key == K_SPACE:
+                self.set_time()
+                return "PLAYDISPLAY"
+        return "PLAYWAIT"
+    
+    def _run(self):
+        events = pygame.event.get()
+        if self.checkQUIT(events):return "STOP"
+        
+        if self.state == "START":
+            return self.start_run(events)
+        if self.state == "PLAYWAIT":
+            return self.play_wait(events)
+        if self.state == "PLAYDISPLAY":
+            return self.play_display(events)
+        if self.state == "PLAYASK":
+            return self.play_ask(events)
+        
+        return "STOP"
+
+    
+    def run(self):
+        while True:
+            self.clock.tick(60)
+            self.state = self._run()
+            if self.state == "STOP":
+                break
+            
+    
+def main():
+    game = Game()
+    game.run()
+    
+if __name__ == "__main__":
+    main()
