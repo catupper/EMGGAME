@@ -7,6 +7,6 @@
 
 # 実行方法
 
-```
+```bash
 $python Game.py
 ```
