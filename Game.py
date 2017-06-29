@@ -14,9 +14,10 @@ GREEN = (0, 255, 0)
 BLACK = (0, 0, 0)
 EPS = 1e-7
 
-def contrast(color, q, p):
+def contrast(color, q, p, color2 = (0,0,0)):
     r,g,b = color
-    return (r*q/p, g*q/p, b*q/p)
+    r1,g1,b1 = color2
+    return (r1 + (r-r1)*q/p, g1 + (g-g1)*q/p, b1 + (b-b1)*q/p)
     
 
 class Game:
@@ -25,7 +26,7 @@ class Game:
         self.HEIGHT = 800
         self.SQW = 40
         self.SQH = 30
-        self.SQD = 200 #D
+        self.SQD = 500 #D
         self.SQC = WHITE #C
         self.SQT = self.HEIGHT / 2
         self.TRIAL = 5
@@ -33,16 +34,24 @@ class Game:
         self.clock = pygame.time.Clock()
         self.contrast = 1
         self.lr = 1
+        self.x = self.WIDTH / 2
+        self.vx = 5
+        self.a = 3
+        self.R = 30
+        self.y = self.HEIGHT / 2 + 20
+        self.LEDGE = self.WIDTH / 2 - self.SQD  - self.R 
+        self.REDGE = self.WIDTH / 2 + self.SQD  - self.R
         pygame.init()
         pygame.display.set_caption("CognitiveGame")
-        self.screen = pygame.display.set_mode((self.WIDTH,self.HEIGHT), pygame.FULLSCREEN)
+        self.screen = pygame.display.set_mode((self.WIDTH,self.HEIGHT))
         self.font = pygame.font.Font(None, 80)
         self.clock = pygame.time.Clock()
         self.state = "START"
         self.BACKGROUND_COLOR = BLACK
         self.rect = [pygame.Surface((self.SQW, self.SQH)) for i in range(16)]
-        self.centerpoint = pygame.Surface((6,6))
-        pygame.draw.circle(self.centerpoint, WHITE, (3,3), 3)
+        self.circle = pygame.Surface((self.R*2,self.R*2))
+        self.circle.fill(contrast(WHITE, 1, 1.0))
+        #pygame.draw.circle(self.circle, WHITE, (self.R, self.R), self.R)
         for i in range(16):
             s = self.rect[i]
             s.fill(contrast(self.SQC, i+1, 16))                   
@@ -61,29 +70,6 @@ class Game:
             if event.type == KEYDOWN and event.key == K_ESCAPE:
                 return True
         return False
-
-    def set_rect(self, hoge= None, fuga = None):
-        x = self.WIDTH / 2
-        if hoge == None:
-            self.lr = "LR"[random.randint(0,1)]
-        else:
-            self.lr = hoge
-        if self.lr == "R":
-            x += self.SQD - self.SQW / 2
-
-        if self.lr == "L":
-            x -= self.SQD + self.SQW / 2
-        if fuga == None:
-            self.contrast = random.randint(0, 15)
-        else:
-            self.contrast = fuga
-        self.nrect = (self.rect[self.contrast], (x, self.SQT))
-
-    def draw_center_circle(self):
-        self.screen.blit(self.centerpoint, (self.WIDTH / 2 - 3, 10 + self.HEIGHT / 2 - 3))
-        
-    def next_rect(self):
-        return self.nrect
     
     def start_run(self, events):
         self.screen.fill(self.BACKGROUND_COLOR)
@@ -92,7 +78,8 @@ class Game:
         pygame.display.flip()
         for event in events:
             if event.type == KEYUP:
-                return "PLAYWAIT"
+                self.set_time()
+                return "MOVE"
         return "START"
 
     def set_time(self):
@@ -100,32 +87,30 @@ class Game:
 
     def get_time(self):
         return time.time() - self.timestamp
-        
-    def play_wait(self, events):
-        if self.TRIAL == 0:
-            return "END"
-        self.screen.fill(self.BACKGROUND_COLOR)                     
-        ren = self.font.render("Press SpaceBar", 0, WHITE, BLACK)
-        self.screen.blit(ren, (10, 10))
-        self.draw_center_circle()
-        pygame.display.flip()
-        for event in events:
-            if event.type == KEYDOWN and event.key == K_SPACE:
-                self.TRIAL -= 1
-                self.set_time()
-                self.set_rect()
-                return "PLAYDISPLAY"
-        return "PLAYWAIT"
 
-    def play_display(self, events):
+    def move(self):
+        self.x += self.vx
+        print self.x, self.LEDGE, self.REDGE
+        if self.x < self.LEDGE or self.x > self.REDGE:
+            self.vx *= -1
+
+    def speed_up(self):
+        self.circle.fill(contrast(WHITE, self.contrast, 1.0, RED))
+        self.contrast -= 0.1
+        if(self.vx > 0):self.vx += self.a
+        else :self.vx -= self.a
+            
+    def move_run(self, events):
         self.screen.fill(self.BACKGROUND_COLOR)
-        self.draw_center_circle()
-        self.screen.blit(*self.next_rect())
+        self.screen.blit(self.circle, (self.x, self.y))
+        self.move()
         pygame.display.flip()
-        if self.get_time() > self.DISPLAYTIME:
+        if(self.get_time() > 5):
+            self.speed_up()
             self.set_time()
-            return "PLAYASK"
-        return "PLAYDISPLAY"
+        if self.vx > 100:
+            return "START"
+        return "MOVE"
 
     def add_log(self, result):
         self.log.append(
@@ -135,34 +120,14 @@ class Game:
              result
             ])
         
-    
-    def play_ask(self, events):
-        self.screen.fill(self.BACKGROUND_COLOR)                     
-        ren = self.font.render("L or R?", 0, WHITE, BLACK)
-        self.screen.blit(ren, (10, 10))
-        self.draw_center_circle()
-        pygame.display.flip()
-        for event in events:
-            if event.type == KEYDOWN and event.key == K_LEFT:
-                self.add_log("L")
-                return "PLAYWAIT"
-            if event.type == KEYDOWN and event.key == K_RIGHT:
-                self.add_log("R")
-                return "PLAYWAIT"
-        return "PLAYASK"
-    
     def _run(self):
         events = pygame.event.get()
         if self.checkQUIT(events):return "STOP"
         
         if self.state == "START":
             return self.start_run(events)
-        if self.state == "PLAYWAIT":
-            return self.play_wait(events)
-        if self.state == "PLAYDISPLAY":
-            return self.play_display(events)
-        if self.state == "PLAYASK":
-            return self.play_ask(events)
+        if self.state == "MOVE":
+            return self.move_run(events)
         return "STOP"
 
     
