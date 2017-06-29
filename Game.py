@@ -21,12 +21,12 @@ def contrast(color, q, p):
 
 class Game:
     def __init__(self):
-        self.WIDTH = 800
-        self.HEIGHT = 700
+        self.WIDTH = 1500
+        self.HEIGHT = 800
         self.SQW = 40
         self.SQH = 30
-        self.SQD = 200
-        self.SQC = WHITE
+        self.SQD = 200 #D
+        self.SQC = WHITE #C
         self.SQT = self.HEIGHT / 2
         self.TRIAL = 25
         self.DISPLAYTIME = 0.1 #sec
@@ -41,9 +41,11 @@ class Game:
         self.state = "START"
         self.BACKGROUND_COLOR = BLACK
         self.rect = [pygame.Surface((self.SQW, self.SQH)) for i in range(16)]
+        self.centerpoint = pygame.Surface((6,6))
+        pygame.draw.circle(self.centerpoint, WHITE, (3,3), 3)
         for i in range(16):
             s = self.rect[i]
-            s.fill(contrast(self.SQC, i, 16))                   
+            s.fill(contrast(self.SQC, i+1, 16))                   
         self.nrect = None
         self.log = []
 
@@ -54,20 +56,25 @@ class Game:
         for event in events:
             if event.type == QUIT:
                 return True
+            if event.type == KEYDOWN and event.key == K_ESCAPE:
+                return True
         return False
 
     def set_rect(self):
         x = self.WIDTH / 2
         self.lr = "LR"[random.randint(0,1)]
         if self.lr == "R":
-            x += self.SQD
+            x += self.SQD - self.SQW / 2
 
         if self.lr == "L":
-            x -= self.SQD
-
+            x -= self.SQD + self.SQW / 2
+        print x - self.WIDTH/2
         self.contrast = random.randint(0, 15)
         self.nrect = (self.rect[self.contrast], (x, self.SQT))
-    
+
+    def draw_center_circle(self):
+        self.screen.blit(self.centerpoint, (self.WIDTH / 2 - 3, 10 + self.HEIGHT / 2 - 3))
+        
     def next_rect(self):
         return self.nrect
     
@@ -93,6 +100,7 @@ class Game:
         self.screen.fill(self.BACKGROUND_COLOR)                     
         ren = self.font.render("Press SpaceBar", 0, WHITE, BLACK)
         self.screen.blit(ren, (10, 10))
+        self.draw_center_circle()
         pygame.display.flip()
         for event in events:
             if event.type == KEYDOWN and event.key == K_SPACE:
@@ -105,6 +113,7 @@ class Game:
     def play_display(self, events):
         self.screen.fill(self.BACKGROUND_COLOR)
         self.screen.blit(*self.next_rect())
+        self.draw_center_circle()
         pygame.display.flip()
         if self.get_time() > self.DISPLAYTIME:
             self.set_time()
@@ -124,6 +133,7 @@ class Game:
         self.screen.fill(self.BACKGROUND_COLOR)                     
         ren = self.font.render("L or R?", 0, WHITE, BLACK)
         self.screen.blit(ren, (10, 10))
+        self.draw_center_circle()
         pygame.display.flip()
         for event in events:
             if event.type == KEYDOWN and event.key == K_LEFT:
