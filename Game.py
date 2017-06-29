@@ -28,14 +28,14 @@ class Game:
         self.SQD = 200 #D
         self.SQC = WHITE #C
         self.SQT = self.HEIGHT / 2
-        self.TRIAL = 25
-        self.DISPLAYTIME = 0.1 #sec
+        self.TRIAL = 5
+        self.DISPLAYTIME = 0.1#sec
         self.clock = pygame.time.Clock()
         self.contrast = 1
         self.lr = 1
         pygame.init()
         pygame.display.set_caption("CognitiveGame")
-        self.screen = pygame.display.set_mode((self.WIDTH,self.HEIGHT))
+        self.screen = pygame.display.set_mode((self.WIDTH,self.HEIGHT), pygame.FULLSCREEN)
         self.font = pygame.font.Font(None, 80)
         self.clock = pygame.time.Clock()
         self.state = "START"
@@ -50,7 +50,9 @@ class Game:
         self.log = []
 
     def save_result(self):
-        print self.log
+        print "%6s  %10s  %10s  %10s"%("Time(sec)", "contrast", "correct", "result")
+        for log in self.log:
+            print "%.5lf, %10d, %10c, %10c"%tuple(log)
 
     def checkQUIT(self, events):
         for event in events:
@@ -60,16 +62,21 @@ class Game:
                 return True
         return False
 
-    def set_rect(self):
+    def set_rect(self, hoge= None, fuga = None):
         x = self.WIDTH / 2
-        self.lr = "LR"[random.randint(0,1)]
+        if hoge == None:
+            self.lr = "LR"[random.randint(0,1)]
+        else:
+            self.lr = hoge
         if self.lr == "R":
             x += self.SQD - self.SQW / 2
 
         if self.lr == "L":
             x -= self.SQD + self.SQW / 2
-        print x - self.WIDTH/2
-        self.contrast = random.randint(0, 15)
+        if fuga == None:
+            self.contrast = random.randint(0, 15)
+        else:
+            self.contrast = fuga
         self.nrect = (self.rect[self.contrast], (x, self.SQT))
 
     def draw_center_circle(self):
@@ -112,8 +119,8 @@ class Game:
 
     def play_display(self, events):
         self.screen.fill(self.BACKGROUND_COLOR)
-        self.screen.blit(*self.next_rect())
         self.draw_center_circle()
+        self.screen.blit(*self.next_rect())
         pygame.display.flip()
         if self.get_time() > self.DISPLAYTIME:
             self.set_time()
